@@ -20,7 +20,7 @@
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Serif Georgian",serif;line-height:1.7;-webkit-font-smoothing:antialiased}
-body:before{ /* ნატიფი მარცვლოვანი ტექსტურა */
+body:before{
  content:"";position:fixed;inset:0;pointer-events:none;z-index:200;opacity:.05;
  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -349,7 +349,7 @@ textarea{border-radius:18px;background:rgba(0,0,0,.35);backdrop-filter:blur(10px
    </div>
    <button class="play" id="play" aria-label="დაკვრა">▶</button>
   </div>
-  <audio id="voiceAudio" src="voice.mp3" preload="metadata"></audio>
+  <audio id="voiceAudio" src="voice.mp3" preload="auto"></audio>
   <div class="track"><span id="bar"></span></div>
   <div class="times"><span id="current">00:00</span><span id="duration">--:--</span></div>
 
@@ -417,7 +417,7 @@ setTimeout(()=>{
  title.classList.add("show");
 },3800);
 
-/* შესვლა + ფონური მუსიკის ჩართვა (მომხმარებლის დაჭერა აუცილებელია) */
+/* შესვლა + ფონური მუსიკის ჩართვა */
 document.getElementById("enter").addEventListener("click",()=>{
  title.style.opacity="0";
  title.style.visibility="hidden";
@@ -429,6 +429,7 @@ document.getElementById("enter").addEventListener("click",()=>{
  }catch(e){}
  music.volume=.5;
  music.play().catch(()=>{});
+ audio.load(); // წინასწარ ტვირთავს ვოისს, რომ მობილურზე შეცდომა არ აიცილოს
 });
 
 /* მუზეუმზე გადასვლისას მუსიკის პოზიციის შენახვა */
@@ -455,18 +456,25 @@ function updateCounter(){
 updateCounter();
 setInterval(updateCounter,1000);
 
-/* ხმოვანი ჩანაწერი: დაკვრისას ფონური მუსიკა ჩერდება, დასრულებისას ბრუნდება */
+/* ხმოვანი ჩანაწერის დაკვრა */
 play.addEventListener("click",async()=>{
  if(audio.paused){
   try{
+   play.textContent="⏳"; // დატვირთვის სიმბოლო სანამ ჩაირთვება
    await audio.play();
-   play.textContent="Ⅱ";play.classList.add("on");
+   play.textContent="Ⅱ";
+   play.classList.add("on");
    resumeMusicAfterVoice=!music.paused;
    music.pause();
-  }catch(e){alert("შეამოწმე, რომ voice.mp3 ფაილი index.html-ის გვერდით დევს.")}
+  }catch(e){
+   console.error(e);
+   play.textContent="▶";
+   alert("ვერ მოხერხდა voice.mp3 ფაილის გახსნა. დარწმუნდი, რომ ფაილი ატვირთულია და სახელი ზუსტად 'voice.mp3'-ია.");
+  }
  }else{
   audio.pause();
-  play.textContent="▶";play.classList.remove("on");
+  play.textContent="▶";
+  play.classList.remove("on");
   if(resumeMusicAfterVoice)music.play().catch(()=>{});
  }
 });
@@ -515,19 +523,15 @@ document.getElementById("save").addEventListener("click",()=>{
   else{music.pause();fab.classList.add("off")}
   resumeMusicAfterVoice=false;
  });
- /* მინის ღილაკების შუქი კურსორზე */
  document.addEventListener("pointermove",e=>{
   const t=e.target.closest&&e.target.closest("#titleScreen button,.outline,.gold-button,.museum a,.play,.music-fab");
   if(!t)return;const r=t.getBoundingClientRect();
   t.style.setProperty("--mx",(e.clientX-r.left)+"px");t.style.setProperty("--my",(e.clientY-r.top)+"px");
  });
- /* სქროლის ხაზი */
  const pr=document.getElementById("progress");
  addEventListener("scroll",()=>{pr.style.width=(scrollY/(document.documentElement.scrollHeight-innerHeight)*100)+"%"},{passive:true});
- /* გამოჩენა */
  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12});
  document.querySelectorAll(".heading,.photo,.counter,.audio-box,.letter,.museum,.lead").forEach(el=>{el.classList.add("reveal");io.observe(el)});
- /* ოქროს მტვერი */
  if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
  const c=document.getElementById("dust"),x=c.getContext("2d");let W,H;
  const P=Array.from({length:55},()=>({x:Math.random(),y:Math.random(),r:Math.random()*1.6+.4,v:Math.random()*.00006+.00002,a:Math.random()*6.28}));
