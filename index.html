@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ka">
 <head>
@@ -417,7 +418,7 @@ setTimeout(()=>{
  title.classList.add("show");
 },3800);
 
-/* შესვლა + ფონური მუსიკის ჩართვა */
+/* შესვლა + ფონური მუსიკის და ვოისის ერთდროული განბლოკვა აიფონისთვის */
 document.getElementById("enter").addEventListener("click",()=>{
  title.style.opacity="0";
  title.style.visibility="hidden";
@@ -429,7 +430,12 @@ document.getElementById("enter").addEventListener("click",()=>{
  }catch(e){}
  music.volume=.5;
  music.play().catch(()=>{});
- audio.load(); // წინასწარ ტვირთავს ვოისს, რომ მობილურზე შეცდომა არ აიცილოს
+
+ // აიფონის უსაფრთხოების ზონის მოსატყუებლად ვოისს ცარიელად ვუშვებთ და მაშინვე ვაჩერებთ
+ audio.play().then(() => {
+  audio.pause();
+  audio.currentTime = 0;
+ }).catch(e => console.log("Audio init unlock:", e));
 });
 
 /* მუზეუმზე გადასვლისას მუსიკის პოზიციის შენახვა */
@@ -460,16 +466,16 @@ setInterval(updateCounter,1000);
 play.addEventListener("click",async()=>{
  if(audio.paused){
   try{
-   play.textContent="⏳"; // დატვირთვის სიმბოლო სანამ ჩაირთვება
+   resumeMusicAfterVoice=!music.paused;
+   music.pause();
    await audio.play();
    play.textContent="Ⅱ";
    play.classList.add("on");
-   resumeMusicAfterVoice=!music.paused;
-   music.pause();
   }catch(e){
    console.error(e);
    play.textContent="▶";
-   alert("ვერ მოხერხდა voice.mp3 ფაილის გახსნა. დარწმუნდი, რომ ფაილი ატვირთულია და სახელი ზუსტად 'voice.mp3'-ია.");
+   if(resumeMusicAfterVoice)music.play().catch(()=>{});
+   alert("ვერ მოხერხდა voice.mp3 ფაილის გახსნა. შეამოწმე GitHub-ზე ფაილის სახელი.");
   }
  }else{
   audio.pause();
